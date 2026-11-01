@@ -77,8 +77,8 @@ dark-shell-portfolio/
 | Phase | Description | Status | Progress |
 |---|---|---:|---:|
 | 0 | Product definition, visual direction, and repository documentation | Complete | 10% |
-| 1 | Frontend foundation and visual system | In progress | 25% |
-| 2 | Landing page, profile, resume, and contact pages | Planned | 0% |
+| 1 | Frontend foundation and visual system | Complete | 25% |
+| 2 | Landing page, profile, resume, and contact pages | In progress | 45% |
 | 3 | Projects and courses showcase | Planned | 0% |
 | 4 | Authentication and user dashboard | Planned | 0% |
 | 5 | Resume, portfolio, and team-building workflow | Planned | 0% |
@@ -96,6 +96,15 @@ Each completed phase will update this README with its current percentage, delive
 - Added initial sections for profile, projects, and contact.
 - Added a JSON-style profile card and availability status indicator.
 - Next: refine content, add real project data, and complete the public pages.
+
+### Phase 2 Update
+
+- Added real developer profile content for Mahyar Danesfahani.
+- Added skills and technology modules.
+- Added initial project cards for current and planned work.
+- Added learning queue for Python/Django, data science, and AI agents.
+- Added GitHub and LinkedIn contact channels.
+- Next: add a real project data model, project detail pages, and the bilingual language switcher.
 
 ### Developer Profile
 
