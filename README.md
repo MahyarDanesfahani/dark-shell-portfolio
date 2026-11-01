@@ -78,8 +78,8 @@ dark-shell-portfolio/
 |---|---|---:|---:|
 | 0 | Product definition, visual direction, and repository documentation | Complete | 10% |
 | 1 | Frontend foundation and visual system | Complete | 25% |
-| 2 | Landing page, profile, resume, and contact pages | In progress | 45% |
-| 3 | Projects and courses showcase | Planned | 0% |
+| 2 | Landing page, profile, resume, and contact pages | Complete | 50% |
+| 3 | Projects and courses showcase | In progress | 65% |
 | 4 | Authentication and user dashboard | Planned | 0% |
 | 5 | Resume, portfolio, and team-building workflow | Planned | 0% |
 | 6 | Employer project requests and messaging | Planned | 0% |
@@ -105,6 +105,14 @@ Each completed phase will update this README with its current percentage, delive
 - Added learning queue for Python/Django, data science, and AI agents.
 - Added GitHub and LinkedIn contact channels.
 - Next: add a real project data model, project detail pages, and the bilingual language switcher.
+
+### Phase 3 Update
+
+- Added project filtering by technology.
+- Added project counters and visible project states.
+- Added a data-driven learning queue with course progress percentages.
+- Added completed and in-progress course states.
+- Next: connect projects and courses to a backend or editable content store.
 
 ### Developer Profile
 
