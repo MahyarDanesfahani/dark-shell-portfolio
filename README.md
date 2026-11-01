@@ -79,8 +79,8 @@ dark-shell-portfolio/
 | 0 | Product definition, visual direction, and repository documentation | Complete | 10% |
 | 1 | Frontend foundation and visual system | Complete | 25% |
 | 2 | Landing page, profile, resume, and contact pages | Complete | 50% |
-| 3 | Projects and courses showcase | In progress | 65% |
-| 4 | Authentication and user dashboard | Planned | 0% |
+| 3 | Projects and courses showcase | Complete | 70% |
+| 4 | Authentication and user dashboard | In progress | 78% |
 | 5 | Resume, portfolio, and team-building workflow | Planned | 0% |
 | 6 | Employer project requests and messaging | Planned | 0% |
 | 7 | Admin panel, testing, optimization, and deployment | Planned | 0% |
@@ -113,6 +113,14 @@ Each completed phase will update this README with its current percentage, delive
 - Added a data-driven learning queue with course progress percentages.
 - Added completed and in-progress course states.
 - Next: connect projects and courses to a backend or editable content store.
+
+### Phase 4 Update
+
+- Added the first login/register access gate UI.
+- Added a responsive authentication card with email and password fields.
+- Added a placeholder for the future user dashboard workflow.
+- Clearly marked the authentication service as a future backend task.
+- Next: implement real registration, login, protected routes, and user profiles.
 
 ### Developer Profile
 
