@@ -1,72 +1,39 @@
+import 'dotenv/config'
+import crypto from 'node:crypto'
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
+import rateLimit from 'express-rate-limit'
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
+import { Pool } from 'pg'
+import nodemailer from 'nodemailer'
+import { z } from 'zod'
 
-const app = express()
-const port = process.env.PORT || 4000
-const users = []
-const portfolios = []
-const projectRequests = []
-
-app.use(cors())
-app.use(express.json())
-
-app.get('/api/health', (_req, res) => res.json({ status: 'ok', service: 'dark-shell-api' }))
-
-app.post('/api/auth/register', (req, res) => {
-  const { name, email, password } = req.body
-  if (!name || !email || !password) return res.status(400).json({ message: 'name, email and password are required' })
-  if (users.some(user => user.email === email)) return res.status(409).json({ message: 'email already exists' })
-  const user = { id: crypto.randomUUID(), name, email, password, role: 'member', createdAt: new Date().toISOString() }
-  users.push(user)
-  res.status(201).json({ user: publicUser(user), message: 'account created' })
-})
-
-app.post('/api/auth/login', (req, res) => {
-  const { email, password } = req.body
-  const user = users.find(item => item.email === email && item.password === password)
-  if (!user) return res.status(401).json({ message: 'invalid credentials' })
-  res.json({ user: publicUser(user), token: `demo-token-${user.id}` })
-})
-
-app.get('/api/me', (req, res) => {
-  const id = req.headers['x-demo-user-id']
-  const user = users.find(item => item.id === id)
-  if (!user) return res.status(401).json({ message: 'authentication required' })
-  res.json({ user: publicUser(user) })
-})
-
-app.put('/api/profile', (req, res) => {
-  const user = users.find(item => item.id === req.headers['x-demo-user-id'])
-  if (!user) return res.status(401).json({ message: 'authentication required' })
-  const { headline, bio, skills, resumeUrl } = req.body
-  Object.assign(user, { headline, bio, skills, resumeUrl, updatedAt: new Date().toISOString() })
-  res.json({ profile: publicUser(user) })
-})
-
-app.post('/api/portfolio', (req, res) => {
-  const user = users.find(item => item.id === req.headers['x-demo-user-id'])
-  if (!user) return res.status(401).json({ message: 'authentication required' })
-  const { title, description, technologies, link, status = 'in_progress' } = req.body
-  if (!title || !description) return res.status(400).json({ message: 'title and description are required' })
-  const item = { id: crypto.randomUUID(), userId: user.id, title, description, technologies, link, status, createdAt: new Date().toISOString() }
-  portfolios.push(item)
-  res.status(201).json({ portfolio: item })
-})
-
-app.get('/api/portfolio/:userId', (req, res) => {
-  res.json({ portfolio: portfolios.filter(item => item.userId === req.params.userId) })
-})
-
-app.post('/api/project-requests', (req, res) => {
-  const { name, email, title, description, budget, timeline } = req.body
-  if (!name || !email || !title || !description) return res.status(400).json({ message: 'name, email, title and description are required' })
-  const request = { id: crypto.randomUUID(), name, email, title, description, budget, timeline, status: 'pending_review', createdAt: new Date().toISOString() }
-  projectRequests.push(request)
-  res.status(201).json({ request, message: 'project request submitted for review' })
-})
-
-app.get('/api/project-requests', (_req, res) => res.json({ requests: projectRequests }))
-
-function publicUser({ password, ...user }) { return user }
-
-app.listen(port, () => console.log(`Dark Shell API listening on http://localhost:${port}`))
+const app = express(); const port = Number(process.env.PORT || 4000); const jwtSecret = process.env.JWT_SECRET
+if (!jwtSecret || jwtSecret.length < 32) throw new Error('JWT_SECRET must be at least 32 characters')
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : undefined })
+app.set('trust proxy', 1); app.use(helmet()); app.use(cors({ origin: (process.env.CLIENT_ORIGIN || 'http://localhost:5173').split(',').map(v => v.trim()), credentials: true })); app.use(express.json({ limit: '100kb' })); app.use(rateLimit({ windowMs: 900000, limit: 300, standardHeaders: 'draft-7', legacyHeaders: false }))
+const authLimit = rateLimit({ windowMs: 900000, limit: 10, message: { message: 'too many authentication attempts' } })
+const email = z.string().trim().email().max(254).transform(v => v.toLowerCase()); const password = z.string().min(8).max(128)
+const registerSchema = z.object({ name: z.string().trim().min(2).max(100), email, password }); const loginSchema = z.object({ email, password })
+const profileSchema = z.object({ headline: z.string().trim().max(160).optional(), bio: z.string().trim().max(3000).optional(), skills: z.array(z.string().trim().max(60)).max(30).optional(), resumeUrl: z.string().url().max(500).optional().or(z.literal('')) })
+const portfolioSchema = z.object({ title: z.string().trim().min(2).max(160), description: z.string().trim().min(2).max(5000), technologies: z.array(z.string().trim().max(60)).max(30).default([]), link: z.string().url().max(500).optional().or(z.literal('')), status: z.enum(['in_progress', 'completed', 'archived']).default('in_progress') })
+const requestSchema = z.object({ name: z.string().trim().min(2).max(100), email, title: z.string().trim().min(2).max(160), description: z.string().trim().min(10).max(5000), budget: z.string().trim().max(100).optional(), timeline: z.string().trim().max(100).optional() })
+async function initDb() { await pool.query(`CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'member', headline TEXT, bio TEXT, skills JSONB NOT NULL DEFAULT '[]', resume_url TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now()); CREATE TABLE IF NOT EXISTS portfolios (id UUID PRIMARY KEY, user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, title TEXT NOT NULL, description TEXT NOT NULL, technologies JSONB NOT NULL DEFAULT '[]', link TEXT, status TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now()); CREATE TABLE IF NOT EXISTS project_requests (id UUID PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, title TEXT NOT NULL, description TEXT NOT NULL, budget TEXT, timeline TEXT, status TEXT NOT NULL DEFAULT 'pending_review', created_at TIMESTAMPTZ NOT NULL DEFAULT now());`) }
+const publicUser = r => ({ id:r.id, name:r.name, email:r.email, role:r.role, headline:r.headline, bio:r.bio, skills:r.skills, resumeUrl:r.resume_url, createdAt:r.created_at, updatedAt:r.updated_at }); const tokenFor = u => jwt.sign({ sub:u.id, role:u.role }, jwtSecret, { expiresIn:process.env.JWT_EXPIRES_IN || '2h', issuer:'dark-shell-api', audience:'dark-shell-client' })
+async function requireAuth(req,res,next) { try { const token=req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null; if(!token) return res.status(401).json({message:'authentication required'}); const claims=jwt.verify(token,jwtSecret,{issuer:'dark-shell-api',audience:'dark-shell-client'}); const r=await pool.query('SELECT * FROM users WHERE id=$1',[claims.sub]); if(!r.rows[0]) return res.status(401).json({message:'authentication required'}); req.user=r.rows[0]; next() } catch { res.status(401).json({message:'invalid or expired token'}) } }
+function parsed(schema,body,res) { const r=schema.safeParse(body); if(!r.success){res.status(400).json({message:'validation failed',errors:r.error.flatten().fieldErrors});return null} return r.data }
+app.get('/api/health',async(_req,res)=>{try{await pool.query('SELECT 1');res.json({status:'ok',database:'ok',service:'dark-shell-api'})}catch{res.status(503).json({status:'degraded',database:'unavailable',service:'dark-shell-api'})}})
+app.post('/api/auth/register',authLimit,async(req,res,next)=>{try{const d=parsed(registerSchema,req.body,res);if(!d)return;const hash=await bcrypt.hash(d.password,12);const r=await pool.query('INSERT INTO users (id,name,email,password_hash) VALUES ($1,$2,$3,$4) RETURNING *',[crypto.randomUUID(),d.name,d.email,hash]);res.status(201).json({user:publicUser(r.rows[0]),token:tokenFor(r.rows[0]),message:'account created'})}catch(e){if(e.code==='23505')return res.status(409).json({message:'email already exists'});next(e)}})
+app.post('/api/auth/login',authLimit,async(req,res,next)=>{try{const d=parsed(loginSchema,req.body,res);if(!d)return;const r=await pool.query('SELECT * FROM users WHERE email=$1',[d.email]);const u=r.rows[0];if(!u||!(await bcrypt.compare(d.password,u.password_hash)))return res.status(401).json({message:'invalid credentials'});res.json({user:publicUser(u),token:tokenFor(u)})}catch(e){next(e)}})
+app.get('/api/me',requireAuth,(req,res)=>res.json({user:publicUser(req.user)}))
+app.put('/api/profile',requireAuth,async(req,res,next)=>{try{const d=parsed(profileSchema,req.body,res);if(!d)return;const r=await pool.query('UPDATE users SET headline=COALESCE($1,headline),bio=COALESCE($2,bio),skills=COALESCE($3,skills),resume_url=COALESCE($4,resume_url),updated_at=now() WHERE id=$5 RETURNING *',[d.headline,d.bio,d.skills?JSON.stringify(d.skills):null,d.resumeUrl,req.user.id]);res.json({profile:publicUser(r.rows[0])})}catch(e){next(e)}})
+app.post('/api/portfolio',requireAuth,async(req,res,next)=>{try{const d=parsed(portfolioSchema,req.body,res);if(!d)return;const r=await pool.query('INSERT INTO portfolios (id,user_id,title,description,technologies,link,status) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',[crypto.randomUUID(),req.user.id,d.title,d.description,JSON.stringify(d.technologies),d.link||null,d.status]);res.status(201).json({portfolio:r.rows[0]})}catch(e){next(e)}})
+app.get('/api/portfolio/:userId',async(req,res,next)=>{try{const r=await pool.query('SELECT * FROM portfolios WHERE user_id=$1 ORDER BY created_at DESC',[req.params.userId]);res.json({portfolio:r.rows})}catch(e){next(e)}})
+async function sendContactEmail(d){if(!process.env.SMTP_HOST||!process.env.CONTACT_TO)return false;const t=nodemailer.createTransport({host:process.env.SMTP_HOST,port:Number(process.env.SMTP_PORT||587),secure:process.env.SMTP_SECURE==='true',auth:process.env.SMTP_USER?{user:process.env.SMTP_USER,pass:process.env.SMTP_PASS}:undefined});await t.sendMail({from:process.env.SMTP_FROM||process.env.SMTP_USER,to:process.env.CONTACT_TO,replyTo:d.email,subject:`[Portfolio] ${d.title}`,text:`${d.name} (${d.email})\n\n${d.description}`});return true}
+app.post('/api/project-requests',async(req,res,next)=>{try{const d=parsed(requestSchema,req.body,res);if(!d)return;const r=await pool.query('INSERT INTO project_requests (id,name,email,title,description,budget,timeline) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',[crypto.randomUUID(),d.name,d.email,d.title,d.description,d.budget||null,d.timeline||null]);const delivered=await sendContactEmail(d);res.status(201).json({request:r.rows[0],message:delivered?'project request submitted and notification sent':'project request submitted for review'})}catch(e){next(e)}})
+app.get('/api/project-requests',requireAuth,async(_req,res,next)=>{try{const r=await pool.query('SELECT * FROM project_requests ORDER BY created_at DESC');res.json({requests:r.rows})}catch(e){next(e)}})
+app.use((e,_req,res,_next)=>{console.error(e);res.status(500).json({message:'internal server error'})})
+if(process.env.NODE_ENV!=='test')initDb().then(()=>app.listen(port,()=>console.log(`Dark Shell API listening on http://localhost:${port}`))).catch(e=>{console.error('Database initialization failed',e);process.exit(1)})
+export { app, initDb, pool }
