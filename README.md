@@ -81,7 +81,7 @@ dark-shell-portfolio/
 | 2 | Landing page, profile, resume, and contact pages | Complete | 50% |
 | 3 | Projects and courses showcase | Complete | 70% |
 | 4 | Authentication and user dashboard | Complete | 82% |
-| 5 | Resume, portfolio, and team-building workflow | In progress | 86% |
+| 5 | Resume, portfolio, and team-building workflow | Complete | 90% |
 | 6 | Employer project requests and messaging | Planned | 0% |
 | 7 | Admin panel, testing, optimization, and deployment | Planned | 0% |
 
@@ -130,6 +130,15 @@ Each completed phase will update this README with its current percentage, delive
 - Added public-user sanitization so passwords are never returned by the API response.
 - Added a server README with local run instructions and production warnings.
 - Important: storage is currently in memory and is for development only; PostgreSQL, password hashing, JWT/session security, validation, and rate limiting are next.
+
+### Phase 6 Update
+
+- Added profile update API for headline, bio, skills, and resume URL.
+- Added portfolio creation and public portfolio listing APIs.
+- Added employer project-request submission and review-list APIs.
+- Added a collaboration pipeline section to the frontend UI.
+- Added the initial user workflow: profile → portfolio → project request.
+- Security and persistence backlog remains explicit: PostgreSQL, password hashing, JWT/session security, validation, and rate limiting.
 
 ### Developer Profile
 
