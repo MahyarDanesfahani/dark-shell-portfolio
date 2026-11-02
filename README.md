@@ -80,8 +80,8 @@ dark-shell-portfolio/
 | 1 | Frontend foundation and visual system | Complete | 25% |
 | 2 | Landing page, profile, resume, and contact pages | Complete | 50% |
 | 3 | Projects and courses showcase | Complete | 70% |
-| 4 | Authentication and user dashboard | In progress | 78% |
-| 5 | Resume, portfolio, and team-building workflow | Planned | 0% |
+| 4 | Authentication and user dashboard | Complete | 82% |
+| 5 | Resume, portfolio, and team-building workflow | In progress | 86% |
 | 6 | Employer project requests and messaging | Planned | 0% |
 | 7 | Admin panel, testing, optimization, and deployment | Planned | 0% |
 
@@ -121,6 +121,15 @@ Each completed phase will update this README with its current percentage, delive
 - Added a placeholder for the future user dashboard workflow.
 - Clearly marked the authentication service as a future backend task.
 - Next: implement real registration, login, protected routes, and user profiles.
+
+### Phase 5 Update
+
+- Added the Node.js/Express backend foundation in `server/`.
+- Added health-check endpoint at `/api/health`.
+- Added development registration, login, and current-user endpoints.
+- Added public-user sanitization so passwords are never returned by the API response.
+- Added a server README with local run instructions and production warnings.
+- Important: storage is currently in memory and is for development only; PostgreSQL, password hashing, JWT/session security, validation, and rate limiting are next.
 
 ### Developer Profile
 
