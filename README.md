@@ -82,7 +82,7 @@ dark-shell-portfolio/
 | 3 | Projects and courses showcase | Complete | 70% |
 | 4 | Authentication and user dashboard | Complete | 82% |
 | 5 | Resume, portfolio, and team-building workflow | Complete | 90% |
-| 6 | Employer project requests and messaging | Planned | 0% |
+| 6 | Employer project requests and messaging | In progress | 95% |
 | 7 | Admin panel, testing, optimization, and deployment | Planned | 0% |
 
 ### Development Workflow
@@ -139,6 +139,14 @@ Each completed phase will update this README with its current percentage, delive
 - Added a collaboration pipeline section to the frontend UI.
 - Added the initial user workflow: profile → portfolio → project request.
 - Security and persistence backlog remains explicit: PostgreSQL, password hashing, JWT/session security, validation, and rate limiting.
+
+### Phase 7 Update
+
+- Added `.gitignore` for dependencies, build artifacts, logs, and secrets.
+- Added `server/.env.example` for local and deployment configuration.
+- Added `DEPLOYMENT.md` with run instructions and MVP release checklist.
+- Verified the frontend production build successfully.
+- The initial public MVP is ready for review; production launch still requires the security and persistence items listed in the checklist.
 
 ### Developer Profile
 
