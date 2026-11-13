@@ -56,7 +56,7 @@ function App() {
     const text = chatInput.trim()
     if (!text) return
     let reply = ''
-    const apiUrl = import.meta.env.VITE_API_URL
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://mahyardanesfahani-github-io.onrender.com'
     try { if (apiUrl) { const response = await fetch(`${apiUrl}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [...chatMessages, { role: 'user', text }].map(message => ({ role: message.role, content: message.text })) }) }); const data = await response.json(); if (response.ok) reply = data.message } } catch { /* use the offline assistant below */ }
     if (!reply) reply = /مهارت|تکنولوژ|فرانت|بک.?اند/i.test(text) ? 'مهارت‌های اصلی مهیار در Frontend، Backend، Data & AI و ابزارهای تحویل دسته‌بندی شده‌اند. برای جزئیات بخش ابزارها را ببین.' : /پروژه|نمونه.?کار/i.test(text) ? 'پروژه‌های منتخب شامل Mini Bank، Rangyar Warehouse، Building Manager و همین Portfolio هستند. لینک GitHub هرکدام در بخش پروژه‌هاست.' : /همکار|استخدام|کار/i.test(text) ? 'مهیار برای فرصت‌های جدی توسعه نرم‌افزار آماده است. از بخش ارتباط می‌توانی LinkedIn یا GitHub او را باز کنی.' : 'سوال خوبی است! برای پاسخ دقیق‌تر درباره مهارت‌ها، پروژه‌ها یا همکاری سوال بپرس.'
     const next: ChatMessage[] = [...chatMessages, { role: 'user', text }, { role: 'assistant', text: reply }]
