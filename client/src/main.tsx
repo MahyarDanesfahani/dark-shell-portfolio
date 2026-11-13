@@ -51,11 +51,14 @@ function App() {
   })
   const filters = ['ALL', ...Array.from(new Set(featuredProjects.flatMap(project => project.tags))).slice(0, 6)]
   const filteredProjects = filter === 'ALL' ? featuredProjects : featuredProjects.filter(project => project.tags.includes(filter))
-  function sendChat(event: FormEvent<HTMLFormElement>) {
+  async function sendChat(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const text = chatInput.trim()
     if (!text) return
-    const reply = /مهارت|تکنولوژ|فرانت|بک.?اند/i.test(text) ? 'مهارت‌های اصلی مهیار در Frontend، Backend، Data & AI و ابزارهای تحویل دسته‌بندی شده‌اند. برای جزئیات بخش ابزارها را ببین.' : /پروژه|نمونه.?کار/i.test(text) ? 'پروژه‌های منتخب شامل Mini Bank، Rangyar Warehouse، Building Manager و همین Portfolio هستند. لینک GitHub هرکدام در بخش پروژه‌هاست.' : /همکار|استخدام|کار/i.test(text) ? 'مهیار برای فرصت‌های جدی توسعه نرم‌افزار آماده است. از بخش ارتباط می‌توانی LinkedIn یا GitHub او را باز کنی.' : 'سوال خوبی است! برای پاسخ دقیق‌تر درباره مهارت‌ها، پروژه‌ها یا همکاری سوال بپرس.'
+    let reply = ''
+    const apiUrl = import.meta.env.VITE_API_URL
+    try { if (apiUrl) { const response = await fetch(`${apiUrl}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [...chatMessages, { role: 'user', text }].map(message => ({ role: message.role, content: message.text })) }) }); const data = await response.json(); if (response.ok) reply = data.message } } catch { /* use the offline assistant below */ }
+    if (!reply) reply = /مهارت|تکنولوژ|فرانت|بک.?اند/i.test(text) ? 'مهارت‌های اصلی مهیار در Frontend، Backend، Data & AI و ابزارهای تحویل دسته‌بندی شده‌اند. برای جزئیات بخش ابزارها را ببین.' : /پروژه|نمونه.?کار/i.test(text) ? 'پروژه‌های منتخب شامل Mini Bank، Rangyar Warehouse، Building Manager و همین Portfolio هستند. لینک GitHub هرکدام در بخش پروژه‌هاست.' : /همکار|استخدام|کار/i.test(text) ? 'مهیار برای فرصت‌های جدی توسعه نرم‌افزار آماده است. از بخش ارتباط می‌توانی LinkedIn یا GitHub او را باز کنی.' : 'سوال خوبی است! برای پاسخ دقیق‌تر درباره مهارت‌ها، پروژه‌ها یا همکاری سوال بپرس.'
     const next: ChatMessage[] = [...chatMessages, { role: 'user', text }, { role: 'assistant', text: reply }]
     setChatMessages(next); localStorage.setItem('mahyar-chat-history', JSON.stringify(next)); setChatInput('')
   }
