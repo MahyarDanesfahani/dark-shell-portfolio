@@ -39,13 +39,14 @@ const services = [
   { number: '03', title: 'حل مسئله', text: 'تبدیل ایده و نیازمندی مبهم به مسیر فنی روشن، قابل اجرا و قابل اندازه‌گیری.' },
 ]
 const featuredProjects = projects.slice(0, 9)
-const initialChat = [{ role: 'assistant', text: 'سلام! من دستیار مهیارم. درباره مهارت‌ها، پروژه‌ها یا همکاری سوالی داری؟' }]
+type ChatMessage = { role: 'user' | 'assistant'; text: string }
+const initialChat: ChatMessage[] = [{ role: 'assistant', text: 'سلام! من دستیار مهیارم. درباره مهارت‌ها، پروژه‌ها یا همکاری سوالی داری؟' }]
 
 function App() {
   const [filter, setFilter] = useState('ALL')
   const [chatOpen, setChatOpen] = useState(false)
   const [chatInput, setChatInput] = useState('')
-  const [chatMessages, setChatMessages] = useState(() => {
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
     try { return JSON.parse(localStorage.getItem('mahyar-chat-history') || 'null') || initialChat } catch { return initialChat }
   })
   const filters = ['ALL', ...Array.from(new Set(featuredProjects.flatMap(project => project.tags))).slice(0, 6)]
@@ -55,7 +56,7 @@ function App() {
     const text = chatInput.trim()
     if (!text) return
     const reply = /مهارت|تکنولوژ|فرانت|بک.?اند/i.test(text) ? 'مهارت‌های اصلی مهیار در Frontend، Backend، Data & AI و ابزارهای تحویل دسته‌بندی شده‌اند. برای جزئیات بخش ابزارها را ببین.' : /پروژه|نمونه.?کار/i.test(text) ? 'پروژه‌های منتخب شامل Mini Bank، Rangyar Warehouse، Building Manager و همین Portfolio هستند. لینک GitHub هرکدام در بخش پروژه‌هاست.' : /همکار|استخدام|کار/i.test(text) ? 'مهیار برای فرصت‌های جدی توسعه نرم‌افزار آماده است. از بخش ارتباط می‌توانی LinkedIn یا GitHub او را باز کنی.' : 'سوال خوبی است! برای پاسخ دقیق‌تر درباره مهارت‌ها، پروژه‌ها یا همکاری سوال بپرس.'
-    const next = [...chatMessages, { role: 'user', text }, { role: 'assistant', text: reply }]
+    const next: ChatMessage[] = [...chatMessages, { role: 'user', text }, { role: 'assistant', text: reply }]
     setChatMessages(next); localStorage.setItem('mahyar-chat-history', JSON.stringify(next)); setChatInput('')
   }
   return <div className="site-shell"><div className="scanlines" />
